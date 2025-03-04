@@ -1,0 +1,7 @@
+com\bookstore\cart\StockUpdateRequest.class
+com\bookstore\cart\CartController.class
+com\bookstore\cart\CartRequest.class
+com\bookstore\cart\PaymentRequest.class
+com\bookstore\cart\CartItem.class
+com\bookstore\cart\CartServiceApplication.class
+com\bookstore\cart\OrderRequest.class
