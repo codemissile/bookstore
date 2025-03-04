@@ -98,7 +98,7 @@ Access: http://localhost:8081/cart
 
 ### 5. Set Up React Frontend
 
-```cd C:\Users\Misal\Desktop\bookstore```<br>
+```cd C:\Users\user\Desktop\bookstore```<br>
 ```npm install```<br>
 ```npm start```<br>
 
