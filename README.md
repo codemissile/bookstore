@@ -83,16 +83,16 @@ INSERT INTO books (title, author, price, stock_quantity) VALUES
 
 ### 3. Set Up Flask Catalog Service
 
-```cd catalog-service```
-```pip install flask flask-cors psycopg2-binary```
-```python app.py```
-http://localhost:5000/catalog
+```cd catalog-service```\n
+```pip install flask flask-cors psycopg2-binary```\n
+```python app.py```\n
+Access: http://localhost:5000/catalog
 
 ### 4. Set Up Spring Boot Cart Service
 
-```cd cart-service```
-```mvn clean install```
-```mvn spring-boot:run```
+```cd cart-service```\n
+```mvn clean install```\n
+```mvn spring-boot:run```\n
 
 Access: http://localhost:8081/cart
 
@@ -102,4 +102,4 @@ Access: http://localhost:8081/cart
 ```npm install```
 ```npm start```
 
-http://localhost:3000
+Access: http://localhost:3000
