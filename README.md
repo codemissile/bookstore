@@ -9,7 +9,7 @@ Allows users to browse a catalog, add items to a cart, checkout, and process pay
 - **`catalog-service/`**: Flask backend for book catalog and inventory.
 
 ## Prerequisites
-Ensure you have the following installed with the specified versions:
+Ensure you have the following installed with these versions:
 
 | Software          | Version       | Download Link                                  |
 |-------------------|---------------|------------------------------------------------|
