@@ -1,22 +1,37 @@
 package com.bookstore.cart.model;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Table;
 
-@Entity(name = "cart_items")
+@Entity
+@Table(name = "cart_items") // Explicit table name (preferred over @Entity(name))
 public class CartItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String sessionId; // New field
+
+    @Column(name = "session_id", nullable = false) // Maps to session_id, required
+    private String sessionId;
+
+    @Column(name = "book_id", nullable = false) // Maps to book_id, required
     private Long bookId;
+
+    @Column(nullable = false) // Title can be nullable in DB, but let’s keep it required for consistency
     private String title;
+
+    @Column(nullable = false) // Matches double precision, required
     private double price;
+
+    @Column(nullable = false) // Matches integer, required
     private int quantity;
 
+    // Constructors
     public CartItem() {}
+
     public CartItem(String sessionId, Long bookId, String title, double price, int quantity) {
         this.sessionId = sessionId;
         this.bookId = bookId;
