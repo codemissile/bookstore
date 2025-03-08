@@ -1,251 +1,132 @@
 package com.bookstore.cart;
 
+import com.bookstore.cart.model.*;
+import com.bookstore.cart.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.security.MessageDigest;
-import java.util.ArrayList;
+
 import java.util.List;
-import java.util.logging.Logger;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/cart")
 @CrossOrigin(origins = "http://localhost:3000")
 public class CartController {
 
-    private static final Logger logger = Logger.getLogger(CartController.class.getName());
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
+    @Autowired
+    private BookRepository bookRepository;
+    @Autowired
+    private CartItemRepository cartItemRepository;
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+    @Autowired
+    private SessionRepository sessionRepository;
     @Autowired
     private RestTemplate restTemplate;
 
     @GetMapping
-    public List<CartItem> getCartItems() {
-        List<CartItem> cartItems = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bookstore", "postgres", "postgres")) {
-            PreparedStatement stmt = conn.prepareStatement("SELECT id, book_id, title, price, quantity FROM cart_items");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                cartItems.add(new CartItem(
-                    rs.getLong("id"),
-                    rs.getLong("book_id"),
-                    rs.getString("title"),
-                    rs.getDouble("price"),
-                    rs.getInt("quantity")
-                ));
-            }
-            logger.info("Fetched cart items: " + cartItems.size());
-        } catch (Exception e) {
-            logger.severe("Failed to fetch cart items: " + e.getMessage());
-            throw new RuntimeException("Failed to fetch cart items: " + e.getMessage());
-        }
-        return cartItems;
+    public ResponseEntity<List<CartItem>> getCartItems(@RequestHeader("Session-ID") String sessionId) {
+        List<CartItem> items = cartItemRepository.findBySessionId(sessionId);
+        System.out.println("Fetched cart items for session " + sessionId + ": " + items);
+        return ResponseEntity.ok(items);
     }
 
     @PostMapping("/add")
-    public ResponseEntity<String> addToCart(@RequestBody CartRequest cartRequest) {
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bookstore", "postgres", "postgres")) {
-            ResponseEntity<String> response = restTemplate.getForEntity(
-                "http://localhost:5000/inventory/" + cartRequest.getBookId(), String.class
-            );
-            if (response.getStatusCodeValue() != 200) {
-                logger.warning("Book not found in inventory: " + cartRequest.getBookId());
-                return ResponseEntity.status(404).body("Book not found in inventory");
-            }
-            JsonNode bookJson = objectMapper.readTree(response.getBody());
-            if (bookJson.get("title") == null || bookJson.get("price") == null) {
-                logger.warning("Invalid inventory response for book_id: " + cartRequest.getBookId());
-                return ResponseEntity.status(500).body("Invalid inventory data");
-            }
-            String title = bookJson.get("title").asText();
-            double price = bookJson.get("price").asDouble();
-
-            PreparedStatement stmt = conn.prepareStatement("SELECT id, quantity FROM cart_items WHERE book_id = ?");
-            stmt.setLong(1, cartRequest.getBookId());
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                Long id = rs.getLong("id");
-                int newQuantity = rs.getInt("quantity") + 1;
-                stmt = conn.prepareStatement("UPDATE cart_items SET quantity = ? WHERE id = ?");
-                stmt.setInt(1, newQuantity);
-                stmt.setLong(2, id);
-                stmt.executeUpdate();
-                logger.info("Updated cart item: book_id=" + cartRequest.getBookId() + ", quantity=" + newQuantity);
-            } else {
-                stmt = conn.prepareStatement(
-                    "INSERT INTO cart_items (book_id, title, price, quantity) VALUES (?, ?, ?, ?)"
+    public ResponseEntity<String> addToCart(@RequestBody CartRequest cartRequest, @RequestHeader("Session-ID") String sessionId) {
+        try {
+            Long bookId = cartRequest.getBookId();
+            System.out.println("Adding book ID: " + bookId + " for session: " + sessionId);
+            Book book = bookRepository.findById(bookId).orElse(null);
+            if (book == null) {
+                ResponseEntity<Book> response = restTemplate.getForEntity(
+                    "http://localhost:5000/inventory/" + bookId, Book.class
                 );
-                stmt.setLong(1, cartRequest.getBookId());
-                stmt.setString(2, title);
-                stmt.setDouble(3, price);
-                stmt.setInt(4, 1);
-                stmt.executeUpdate();
-                logger.info("Added new cart item: book_id=" + cartRequest.getBookId());
+                if (response.getStatusCode().is2xxSuccessful()) {
+                    book = response.getBody();
+                    if (book == null || book.getId() == null) {
+                        return ResponseEntity.status(500).body("Invalid book data from inventory");
+                    }
+                    bookRepository.save(book);
+                } else {
+                    return ResponseEntity.status(404).body("Book not found in inventory");
+                }
             }
+            CartItem item = new CartItem(sessionId, book.getId(), book.getTitle(), book.getPrice(), 1);
+            cartItemRepository.save(item);
+            System.out.println("Saved cart item: " + item);
             return ResponseEntity.ok("Item added to cart");
         } catch (Exception e) {
-            logger.severe("Failed to add to cart: " + e.getMessage());
-            return ResponseEntity.status(500).body("Failed to add to cart: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error adding to cart: " + e.getMessage());
         }
     }
 
-    @DeleteMapping("/remove/{id}")
-    public ResponseEntity<String> removeFromCart(@PathVariable Long id) {
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bookstore", "postgres", "postgres")) {
-            PreparedStatement stmt = conn.prepareStatement("DELETE FROM cart_items WHERE id = ?");
-            stmt.setLong(1, id);
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected > 0) {
-                logger.info("Removed cart item: id=" + id);
-                return ResponseEntity.ok("Item removed from cart");
-            } else {
-                logger.warning("Cart item not found: id=" + id);
-                return ResponseEntity.status(404).body("Item not found");
-            }
+    @PostMapping("/session")
+    public ResponseEntity<String> createSession() {
+        try {
+            String sessionId = UUID.randomUUID().toString();
+            Session session = new Session();
+            session.setSessionId(sessionId);
+            session.setUserData("{\"cart\": []}"); // Valid JSON string
+            sessionRepository.save(session);
+            return ResponseEntity.ok(sessionId);
         } catch (Exception e) {
-            logger.severe("Failed to remove item: " + e.getMessage());
-            return ResponseEntity.status(500).body("Failed to remove item: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Failed to create session: " + e.getMessage());
         }
     }
 
     @PostMapping("/order")
-    public ResponseEntity<String> createOrder(@RequestBody OrderRequest orderRequest) {
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bookstore", "postgres", "postgres")) {
-            conn.setAutoCommit(false);
-
-            List<CartItem> cartItems = getCartItems();
+    public ResponseEntity<String> createOrder(@RequestBody OrderRequest orderRequest, @RequestHeader("Session-ID") String sessionId) {
+        try {
+            List<CartItem> cartItems = cartItemRepository.findBySessionId(sessionId);
+            System.out.println("Cart items for session " + sessionId + ": " + cartItems);
             if (cartItems.isEmpty()) {
-                logger.warning("Cart is empty for order attempt by: " + orderRequest.getCustomerName());
-                return ResponseEntity.status(400).body("Cart is empty");
+                return ResponseEntity.badRequest().body("Cart is empty");
             }
-
+            Order order = new Order();
+            order.setCustomerName(orderRequest.getCustomerName());
+            order.setTotalAmount(cartItems.stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum());
+            orderRepository.save(order);
             for (CartItem item : cartItems) {
-                ResponseEntity<String> response = restTemplate.getForEntity(
-                    "http://localhost:5000/inventory/" + item.getBookId(), String.class
-                );
-                if (response.getStatusCodeValue() != 200) {
-                    throw new RuntimeException("Stock check failed for book ID: " + item.getBookId());
-                }
-                JsonNode stockJson = objectMapper.readTree(response.getBody());
-                int stock = stockJson.get("stock").asInt();
-                if (stock < item.getQuantity()) {
-                    throw new RuntimeException("Insufficient stock for book ID: " + item.getBookId());
-                }
-            }
-
-            PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO orders (customer_name, total_amount) VALUES (?, ?) RETURNING id"
-            );
-            double total = cartItems.stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum();
-            stmt.setString(1, orderRequest.getCustomerName());
-            stmt.setDouble(2, total);
-            ResultSet rs = stmt.executeQuery();
-            rs.next();
-            Long orderId = rs.getLong("id");
-
-            for (CartItem item : cartItems) {
-                stmt = conn.prepareStatement(
-                    "INSERT INTO order_items (order_id, book_id, quantity, price) VALUES (?, ?, ?, ?)"
-                );
-                stmt.setLong(1, orderId);
-                stmt.setLong(2, item.getBookId());
-                stmt.setInt(3, item.getQuantity());
-                stmt.setDouble(4, item.getPrice());
-                stmt.executeUpdate();
-
-                restTemplate.postForEntity(
+                OrderItem orderItem = new OrderItem(order.getId(), item.getBookId(), item.getQuantity(), item.getPrice());
+                orderItemRepository.save(orderItem);
+                ResponseEntity<String> response = restTemplate.postForEntity(
                     "http://localhost:5000/inventory/update",
                     new StockUpdateRequest(item.getBookId(), item.getQuantity()),
                     String.class
                 );
+                System.out.println("Stock update response for book " + item.getBookId() + ": " + response.getBody());
             }
-
-            stmt = conn.prepareStatement("DELETE FROM cart_items");
-            stmt.executeUpdate();
-
-            conn.commit();
-            logger.info("Order created: id=" + orderId + ", customer=" + orderRequest.getCustomerName());
-            return ResponseEntity.ok(orderId.toString());
+            cartItemRepository.deleteAll(cartItems);
+            return ResponseEntity.ok("Order created with ID: " + order.getId());
         } catch (Exception e) {
-            logger.severe("Failed to create order: " + e.getMessage());
-            return ResponseEntity.status(400).body("Failed to create order: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Order creation failed: " + e.getMessage());
         }
     }
 
-    @PostMapping("/payment")
-    public ResponseEntity<String> processPayment(@RequestBody PaymentRequest paymentRequest) {
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bookstore", "postgres", "postgres")) {
-            logger.info("Processing payment: orderId=" + paymentRequest.getOrderId() + ", ccnum=" + paymentRequest.getCcnum() + ", expdate=" + paymentRequest.getExpdate() + ", seccode=" + paymentRequest.getSeccode());
-            
-            PreparedStatement checkStmt = conn.prepareStatement("SELECT id FROM orders WHERE id = ?");
-            checkStmt.setLong(1, paymentRequest.getOrderId());
-            ResultSet rs = checkStmt.executeQuery();
-            if (!rs.next()) {
-                logger.warning("Order not found: " + paymentRequest.getOrderId());
-                return ResponseEntity.status(404).body("Order not found");
+    // New Delete Endpoint
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> removeFromCart(@PathVariable Long id, @RequestHeader("Session-ID") String sessionId) {
+        try {
+            CartItem item = cartItemRepository.findById(id)
+                .filter(cartItem -> cartItem.getSessionId().equals(sessionId))
+                .orElse(null);
+            if (item == null) {
+                return ResponseEntity.status(404).body("Cart item not found or does not belong to this session");
             }
-
-            String hashedCcnum = md5Hash(paymentRequest.getCcnum());
-            PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO card (order_id, ccnum, expdate, seccode) VALUES (?, ?, ?, ?)"
-            );
-            stmt.setLong(1, paymentRequest.getOrderId());
-            stmt.setString(2, hashedCcnum);
-            stmt.setDate(3, java.sql.Date.valueOf(paymentRequest.getExpdate()));
-            stmt.setString(4, paymentRequest.getSeccode());
-            stmt.executeUpdate();
-            logger.info("Payment processed for order: " + paymentRequest.getOrderId());
-            return ResponseEntity.ok("success");
+            cartItemRepository.deleteById(id);
+            return ResponseEntity.ok("Item removed from cart");
         } catch (Exception e) {
-            logger.severe("Failed to process payment: " + e.getMessage());
-            return ResponseEntity.status(400).body("tryagain: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error removing item: " + e.getMessage());
         }
     }
-
-    private String md5Hash(String input) throws Exception {
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] digest = md.digest(input.getBytes());
-        StringBuilder sb = new StringBuilder();
-        for (byte b : digest) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
-    }
-}
-
-class CartItem {
-    private Long id;
-    private Long bookId;
-    private String title;
-    private double price;
-    private int quantity;
-
-    public CartItem(Long id, Long bookId, String title, double price, int quantity) {
-        this.id = id;
-        this.bookId = bookId;
-        this.title = title;
-        this.price = price;
-        this.quantity = quantity;
-    }
-    public Long getId() { return id; }
-    public Long getBookId() { return bookId; }
-    public String getTitle() { return title; }
-    public double getPrice() { return price; }
-    public int getQuantity() { return quantity; }
 }
 
 class CartRequest {
@@ -256,34 +137,13 @@ class CartRequest {
 
 class OrderRequest {
     private String customerName;
-    private List<CartItem> items;
-
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
-    public List<CartItem> getItems() { return items; }
-    public void setItems(List<CartItem> items) { this.items = items; }
-}
-
-class PaymentRequest {
-    private Long orderId;
-    private String ccnum;
-    private String expdate;
-    private String seccode;
-
-    public Long getOrderId() { return orderId; }
-    public void setOrderId(Long orderId) { this.orderId = orderId; }
-    public String getCcnum() { return ccnum; }
-    public void setCcnum(String ccnum) { this.ccnum = ccnum; }
-    public String getExpdate() { return expdate; }
-    public void setExpdate(String expdate) { this.expdate = expdate; }
-    public String getSeccode() { return seccode; }
-    public void setSeccode(String seccode) { this.seccode = seccode; }
 }
 
 class StockUpdateRequest {
     private Long bookId;
     private int quantity;
-
     public StockUpdateRequest(Long bookId, int quantity) {
         this.bookId = bookId;
         this.quantity = quantity;

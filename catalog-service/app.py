@@ -1,73 +1,50 @@
 from flask import Flask, jsonify, request
-from flask_cors import CORS
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from flask_cors import CORS
+import logging
 
 app = Flask(__name__)
 CORS(app)
+logging.basicConfig(level=logging.DEBUG)
 
 def get_db_connection():
-    conn = psycopg2.connect(
-        host="localhost",
-        database="bookstore",
-        user="postgres",
-        password="postgres"
-    )
-    return conn
+    return psycopg2.connect(dbname="bookstore", user="postgres", password="postgres", host="localhost", port="5432")
 
-@app.route("/catalog", methods=["GET"])
+@app.route('/catalog', methods=['GET'])
 def get_catalog():
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT id, title, author, price, stock_quantity FROM books")
-        books = cur.fetchall()
-        cur.close()
-        conn.close()
-        return jsonify(books)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, title, author, price, stock_quantity, image_url FROM books")
+    books = [{"id": row[0], "title": row[1], "author": row[2], "price": row[3], "stock_quantity": row[4], "image_url": row[5]} for row in cur.fetchall()]
+    cur.close()
+    conn.close()
+    return jsonify(books)
 
-@app.route("/inventory/<int:book_id>", methods=["GET"])
-def get_book_stock(book_id):
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT title, price, stock_quantity FROM books WHERE id = %s", (book_id,))
-        book = cur.fetchone()
-        cur.close()
-        conn.close()
-        if book:
-            return jsonify({"title": book["title"], "price": book["price"], "stock": book["stock_quantity"]})
-        return jsonify({"error": "Book not found"}), 404
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+@app.route('/inventory/<int:book_id>', methods=['GET'])
+def get_book(book_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, title, author, price, stock_quantity, image_url FROM books WHERE id = %s", (book_id,))
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if row:
+        return jsonify({"id": row[0], "title": row[1], "author": row[2], "price": row[3], "stock_quantity": row[4], "image_url": row[5]})
+    return jsonify({"error": "Book not found"}), 404
 
-@app.route("/inventory/update", methods=["POST"])
-def update_stock():
-    data = request.json
-    book_id = data.get("bookId")
-    quantity = data.get("quantity")
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT stock_quantity FROM books WHERE id = %s", (book_id,))
-        stock = cur.fetchone()
-        if not stock:
-            cur.close()
-            conn.close()
-            return jsonify({"error": "Book not found"}), 404
-        if stock[0] < quantity:
-            cur.close()
-            conn.close()
-            return jsonify({"error": "Insufficient stock"}), 400
-        cur.execute("UPDATE books SET stock_quantity = stock_quantity - %s WHERE id = %s", (quantity, book_id))
-        conn.commit()
-        cur.close()
-        conn.close()
-        return jsonify({"message": "Stock updated"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+@app.route('/inventory/update', methods=['POST'])
+def update_inventory():
+    data = request.get_json()
+    book_id = data['bookId']
+    quantity = data['quantity']
+    logging.debug(f"Updating stock for book_id {book_id} by reducing {quantity}")
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE books SET stock_quantity = stock_quantity - %s WHERE id = %s", (quantity, book_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return "Stock updated", 200
 
-if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)

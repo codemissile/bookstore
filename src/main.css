@@ -1,37 +1,41 @@
 @charset "UTF-8";
 
-/* Colour Palette */
+/* Color Palette */
 :root {
-    --dark-blue: #5680E9;
-    --sky-blue: #84CEEB;
-    --light-blue: #5AB9EA;
-    --light-purple: #C1C8E4;
-    --purple: #8860D0;
-    --teal: #26A69A;
+    --primary-dark: #2C5282;    /* Deeper blue for depth */
+    --primary: #4299E1;         /* Vibrant blue for main elements */
+    --primary-light: #63B3ED;   /* Softer blue for backgrounds */
+    --secondary: #805AD5;       /* Rich purple for accents */
+    --background: #EBF8FF;      /* Light blue tint for body */
+    --surface: #F7FAFC;         /* Off-white with blue undertone for cards */
+    --text-primary: #1A365D;    /* Darker blue-gray for text */
+    --text-secondary: #718096;  /* Muted blue-gray for secondary text */
+    --success: #38A169;         /* Green for checkout */
+    --danger: #E53E3E;          /* Red for remove */
 }
 
 /* Reset and Global Styles */
 * {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
     list-style: none;
     text-decoration: none;
-    font-family: Arial, 'Comic Sans', Georgia, Times, 'Times New Roman', serif;
-    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: var(--background);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.6;
+    color: var(--text-primary);
 }
 
 img {
     max-width: 100%;
-}
-
-/* Body Layout */
-body {
-    background: var(--light-blue);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    margin: 10px;
-    padding: 0 50px;
+    height: auto;
 }
 
 main {
@@ -40,73 +44,82 @@ main {
 
 /* Header Styles */
 .innerHeader {
-    width: 100%;
-    background-color: var(--teal);
-    display: block;
-    margin: 0 auto;
-    overflow: hidden;
-    padding: 20px;
+    background: var(--primary-light);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    padding: 15px 0;
 }
 
-.innerHeader h1 {
-    color: white;
-    font-weight: bold;
-    font-size: 3rem;
-    text-align: center;
-    margin: 20px 0;
+.header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    padding: 0 20px;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
 }
 
 .logo {
-    width: 100px; /* Smaller size */
-    height: 100px;
-    float: left; /* Moves to left */
-    margin: 5px;
+    height: 50px;
+    width: auto;
+    margin-left: 20px;
 }
 
-/* Navigation */
-nav {
-    background: var(--dark-blue);
+.header-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     margin: 0;
-    text-align: center;
-    width: 100%; /* Fills full width */
-    display: block;
-    clear: both; /* Ensures it stays below floated logo */
 }
 
-nav ul {
-    padding: 0;
-    margin: 0;
-    display: flex; /* Flex to fill width */
+.header-nav {
+    display: flex;
     justify-content: center;
+    gap: 35px; /* Slightly wider for larger buttons */
+    padding: 15px 0;
 }
 
-nav li {
-    flex: 1; /* Each item stretches evenly */
-    display: inline-block;
+.nav-link {
+    font-size: 1.25rem; /* Slightly bigger */
+    font-weight: 700; /* Bolder text */
+    color: var(--surface);
+    background: var(--primary);
+    padding: 12px 25px; /* Larger padding */
+    border-radius: 10px; /* Softer corners */
+    border: 3px solid var(--primary-dark); /* Prominent outline */
+    transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease, border-color 0.3s ease;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+    display: inline-block; /* Ensures proper sizing */
+    text-align: center;
 }
 
-nav a {
-    color: white;
-    padding: 1rem;
-    font-size: 15px;
-    display: block;
-    width: 100%; /* Fills li width */
+.nav-link:hover {
+    background: var(--secondary);
+    border-color: var(--secondary); /* Outline changes with hover */
+    transform: scale(1.05); /* Slight grow effect */
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
-nav a:hover,
-nav a.active {
-    transition: 0.6s;
-    background-color: var(--purple);
-    color: black;
-    text-transform: uppercase;
+.nav-link.active {
+    background: var(--secondary);
+    border-color: var(--secondary);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Containers */
+/* Container */
 .container {
-    background-color: var(--sky-blue);
-    width: 100%;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 15px;
+    padding: 25px;
+    background: var(--surface);
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 /* Home Styling */
@@ -117,215 +130,158 @@ nav a.active {
     justify-content: center;
     min-height: 50vh;
     text-align: center;
-    background-color: var(--sky-blue);
+    background: var(--primary-light);
+    border-radius: 10px;
+    padding: 30px;
 }
 
 .home-container h1 {
-    margin-bottom: 20px;
-    color: var(--purple);
+    font-size: 2.5rem;
+    color: var(--primary-dark);
+    margin-bottom: 25px;
 }
 
 /* Catalog Styling */
 .book-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    grid-gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
 }
 
 .book-section {
-    background: var(--light-purple);
-    margin: 5px;
+    background: var(--surface);
     padding: 20px;
-    border: 2px solid black;
-    border-radius: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.book-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .book-section h2 {
-    color: var(--purple);
     font-size: 1.5rem;
-    padding-bottom: 10px;
+    color: var(--primary-dark);
+    margin-bottom: 12px;
 }
 
 .book-section p {
-    font-size: 15px;
-    margin-bottom: 10px;
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
 }
 
 /* Cart Styling */
-.cart-container ul {
-    list-style: none;
+.container ul {
+    padding: 0;
 }
 
-.cart-container li {
-    padding: 10px;
-    background: white;
-    margin: 5px 0;
-    border-radius: 5px;
+.container li {
+    background: var(--surface);
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 8px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .total {
-    font-weight: bold;
-    font-size: 1.2rem;
-    margin-top: 15px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-dark);
     text-align: right;
+    margin-top: 20px;
 }
 
 /* Buttons */
 .button {
-    background: var(--dark-blue);
-    color: white;
-    padding: 10px 20px;
+    background: var(--primary);
+    color: var(--surface);
+    padding: 12px 24px;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
     cursor: pointer;
-    text-transform: uppercase;
-    transition: background 0.3s;
-    display: inline-block;
+    transition: background 0.3s ease, transform 0.2s ease;
 }
 
 .button:hover {
-    background: var(--purple);
+    background: var(--primary-dark);
+    transform: translateY(-2px);
 }
 
 .remove-btn {
-    background: #e94d56;
-    margin-left: 10px;
+    background: var(--danger);
 }
 
 .remove-btn:hover {
-    background: #d32f38;
+    background: #C53030;
 }
 
 .checkout-btn {
-    background: #28a745;
-    margin-top: 20px;
+    background: var(--success);
 }
 
 .checkout-btn:hover {
-    background: #218838;
+    background: #2F855A;
 }
 
 /* Footer */
 footer {
-    clear: both;
-    height: 60px;
-    margin-top: 10px;
-    background-color: var(--sky-blue);
-    border-top: 2px solid;
+    margin-top: 40px;
+    padding: 20px 0;
     text-align: center;
-    flex-shrink: 0;
+    background: var(--primary-light);
+    color: var(--text-secondary);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 footer small {
-    color: #666;
-    font-size: smaller;
-}
-
-.paymentContainer {
-  position: relative;
-  background-color: var(--sky-blue);
-  width: 100%;
-  margin: auto;
-  padding: 5%;
-}
-
-.paymentContainer h3 {
-  border-bottom: 2px solid;
-  font-size: 25px;
-  margin-bottom: 20px;
-}
-
-.paymentContainer h4 {
-  margin: 25px 0 0 0;
-  font-size: 15px;
-}
-
-.masterCardImg {
-  margin: 10px 0 0 185px;
-  width: 60px;
-  height: 50px;
-}
-
-.paymentForm {
-  margin: 2rem auto;
-  background-color: var(--light-purple);
-  padding: 20px;
-  padding-bottom: 100px;
-}
-
-label, .expDateBox {
-  display: block;
-  padding: 1rem 0 0.25rem;
-}
-
-.card, .cvv {
-  display: inline-block;
-}
-
-#card, #cvv {
-  padding: 0.2rem;
-  display: inline-block;
-}
-
-#cvv {
-  width: 5rem;
-}
-
-.info {
-  color: gray;
-  padding: 0.5rem;
-}
-
-input {
-  padding: 0.2rem;
-}
-
-#btn {
-  background-color: red;
-  color: white;
-  margin: 4px 0;
-  padding: 0.6rem;
-  border: none;
-  cursor: pointer;
-}
-
-#btn:hover {
-  background-color: rgb(143, 47, 47);
-}
-
-#btn:active {
-  background-color: #3e8e41;
-  box-shadow: 0 5px #666;
-  transform: translateY(2px);
+    font-size: 0.9rem;
 }
 
 /* Responsive Design */
-@media screen and (max-width: 600px) {
-    .innerHeader h1 {
-        font-size: 20px;
+@media (max-width: 768px) {
+    .header-top {
+        flex-direction: column;
+        padding: 10px;
+    }
+    .header-title {
+        position: static;
+        transform: none;
+        font-size: 2rem;
         margin: 10px 0;
     }
-
     .logo {
-        width: 50px;
-        height: 50px;
+        margin-left: 0;
+        height: 40px;
     }
-
-    nav a {
-        font-size: 10px;
-        padding: 0.5rem;
+    .header-nav {
+        flex-direction: column;
+        gap: 20px;
+        padding: 10px 0;
     }
-
+    .nav-link {
+        font-size: 1.1rem;
+        padding: 10px 20px;
+    }
     .book-list {
         grid-template-columns: 1fr;
     }
-
     .button {
-        padding: 5px 10px;
-        font-size: 12px;
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+    .container {
+        padding: 20px;
+    }
+    .home-container {
+        padding: 20px;
     }
 }
