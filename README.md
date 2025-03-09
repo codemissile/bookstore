@@ -1,12 +1,15 @@
 # Bookstore
 
-An online bookstore application with a React frontend, Spring Boot cart service, Flask catalog service, and PostgreSQL database. 
-Allows users to browse a catalog, add items to a cart, checkout, and process payments.
+An online bookstore application with a React frontend, Spring Boot cart service, Flask catalog service, and PostgreSQL database. Supports browsing, cart management, and checkout with Docker and Kubernetes deployment options.
 
 ## Project Structure
-- **`bookstore/`**: React frontend (UI).
-- **`cart-service/`**: Spring Boot backend for cart, orders, and payment.
-- **`catalog-service/`**: Flask backend for book catalog and inventory.
+- **`frontend/`**: React frontend (UI).
+- **`backend/cart-service/`**: Spring Boot backend for cart and orders.
+- **`backend/catalog-service/`**: Flask backend for book catalog.
+- **`database/`**: PostgreSQL setup.
+- **`k8s/`**: Kubernetes deployment files.
+- **`ci-cd/`**: CI/CD automation (to be implemented).
+- **`docker-compose.yml`**: Local development with Docker Compose.
 
 ## Prerequisites
 Ensure you have the following installed with these versions:
