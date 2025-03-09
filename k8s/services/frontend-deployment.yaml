@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookstore-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bookstore-frontend
+  template:
+    metadata:
+      labels:
+        app: bookstore-frontend
+    spec:
+      containers:
+      - name: bookstore-frontend
+        image: 160885247530.dkr.ecr.eu-west-2.amazonaws.com/bookstore-frontend:latest
+        ports:
+        - containerPort: 80

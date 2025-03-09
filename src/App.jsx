@@ -3,11 +3,14 @@ import { BrowserRouter as Router, Route, Routes, NavLink, useNavigate, useLocati
 import axios from "axios";
 import "./main.css";
 
+const CART_BASE_URL =  "/api/cart";
+const CATALOG_BASE_URL = "/api/catalog";
+
 function Header() {
     return (
         <header className="innerHeader">
             <img className="logo" src="/images/company-logo.png" alt="Company Logo" title="Company Logo" />
-            <h1>Book Store</h1>
+            <h1>Book Store v4</h1>
             <nav>
                 <ul>
                     <li><NavLink to="/" className={({ isActive }) => (isActive ? "active" : "")}>Home</NavLink></li>
@@ -32,13 +35,13 @@ function Catalog() {
     const [books, setBooks] = useState([]);
 
     useEffect(() => {
-        axios.get("http://localhost:5000/catalog")
+        axios.get(`${CATALOG_BASE_URL}`)
             .then((response) => setBooks(response.data))
             .catch((error) => console.error("Error fetching catalog:", error));
     }, []);
 
     const addToCart = (bookId) => {
-        axios.post("http://localhost:8081/cart/add", { bookId })
+        axios.post(`${CART_BASE_URL}/add`, { bookId })
             .then(() => alert("Added to cart!"))
             .catch((error) => console.error("Error adding to cart:", error));
     };
@@ -74,13 +77,13 @@ function Cart() {
     }, []);
 
     const fetchCart = () => {
-        axios.get("http://localhost:8081/cart")
+        axios.get(`${CART_BASE_URL}`)
             .then((response) => setCartItems(response.data))
             .catch((error) => console.error("Error fetching cart:", error));
     };
 
     const removeFromCart = (id) => {
-        axios.delete(`http://localhost:8081/cart/remove/${id}`)
+        axios.delete(`${CART_BASE_URL}/remove/${id}`)
             .then(() => fetchCart())
             .catch((error) => console.error("Error removing item:", error));
     };
@@ -96,7 +99,7 @@ function Cart() {
             alert("Please enter your name!");
             return;
         }
-        axios.post("http://localhost:8081/cart/order", { customerName, items: cartItems })
+        axios.post(`${CART_BASE_URL}/order`, { customerName, items: cartItems })
             .then((response) => {
                 const orderId = response.data;
                 console.log("Order ID from server:", orderId);
@@ -170,7 +173,7 @@ function Payment() {
         if (validate()) {
             const expdate = `${year}-${month.toString().padStart(2, "0")}-01`;
             console.log("Sending payment: ", { orderId, ccnum: card, expdate, seccode: cvv });
-            axios.post("http://localhost:8081/cart/payment", { orderId, ccnum: card, expdate, seccode: cvv })
+            axios.post(`${CART_BASE_URL}/payment`, { orderId, ccnum: card, expdate, seccode: cvv })
                 .then((response) => {
                     console.log("Payment response:", response.data);
                     navigate(response.data === "success" ? "/success" : "/tryagain");

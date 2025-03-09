@@ -1,6 +1,7 @@
 package com.bookstore.cart;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,10 +26,19 @@ import java.util.logging.Logger;
 @RestController
 @RequestMapping("/cart")
 @CrossOrigin(origins = "http://localhost:3000")
+
 public class CartController {
 
     private static final Logger logger = Logger.getLogger(CartController.class.getName());
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    @Value("${spring.datasource.url}")
+    private String dbUrl;
+    @Value("${spring.datasource.username}")
+    private String dbUser;
+    @Value("${spring.datasource.password}")
+    private String dbPassword;
+    @Value("${catalog.service.url}")
+    private String catalogServiceUrl;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -36,7 +46,7 @@ public class CartController {
     @GetMapping
     public List<CartItem> getCartItems() {
         List<CartItem> cartItems = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bookstore", "postgres", "postgres")) {
+        try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
             PreparedStatement stmt = conn.prepareStatement("SELECT id, book_id, title, price, quantity FROM cart_items");
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
@@ -58,9 +68,9 @@ public class CartController {
 
     @PostMapping("/add")
     public ResponseEntity<String> addToCart(@RequestBody CartRequest cartRequest) {
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bookstore", "postgres", "postgres")) {
+        try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
             ResponseEntity<String> response = restTemplate.getForEntity(
-                "http://localhost:5000/inventory/" + cartRequest.getBookId(), String.class
+                catalogServiceUrl + "/inventory/" + cartRequest.getBookId(), String.class
             );
             if (response.getStatusCodeValue() != 200) {
                 logger.warning("Book not found in inventory: " + cartRequest.getBookId());
@@ -105,7 +115,7 @@ public class CartController {
 
     @DeleteMapping("/remove/{id}")
     public ResponseEntity<String> removeFromCart(@PathVariable Long id) {
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bookstore", "postgres", "postgres")) {
+        try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
             PreparedStatement stmt = conn.prepareStatement("DELETE FROM cart_items WHERE id = ?");
             stmt.setLong(1, id);
             int rowsAffected = stmt.executeUpdate();
@@ -124,7 +134,7 @@ public class CartController {
 
     @PostMapping("/order")
     public ResponseEntity<String> createOrder(@RequestBody OrderRequest orderRequest) {
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bookstore", "postgres", "postgres")) {
+        try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
             conn.setAutoCommit(false);
 
             List<CartItem> cartItems = getCartItems();
@@ -135,7 +145,7 @@ public class CartController {
 
             for (CartItem item : cartItems) {
                 ResponseEntity<String> response = restTemplate.getForEntity(
-                    "http://localhost:5000/inventory/" + item.getBookId(), String.class
+                    catalogServiceUrl + "/inventory/" + item.getBookId(), String.class
                 );
                 if (response.getStatusCodeValue() != 200) {
                     throw new RuntimeException("Stock check failed for book ID: " + item.getBookId());
@@ -168,7 +178,7 @@ public class CartController {
                 stmt.executeUpdate();
 
                 restTemplate.postForEntity(
-                    "http://localhost:5000/inventory/update",
+                    catalogServiceUrl + "/inventory/update",
                     new StockUpdateRequest(item.getBookId(), item.getQuantity()),
                     String.class
                 );
@@ -188,7 +198,7 @@ public class CartController {
 
     @PostMapping("/payment")
     public ResponseEntity<String> processPayment(@RequestBody PaymentRequest paymentRequest) {
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bookstore", "postgres", "postgres")) {
+        try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword)) {
             logger.info("Processing payment: orderId=" + paymentRequest.getOrderId() + ", ccnum=" + paymentRequest.getCcnum() + ", expdate=" + paymentRequest.getExpdate() + ", seccode=" + paymentRequest.getSeccode());
             
             PreparedStatement checkStmt = conn.prepareStatement("SELECT id FROM orders WHERE id = ?");
