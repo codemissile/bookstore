@@ -44,7 +44,7 @@ The cart-service uses schema.sql and data.sql to initialize the database on star
 
 **Catalog Service**
 ```sh
-cd catalog-service
+cd backend/catalog-service
 pip install flask flask-cors psycopg2-binary
 python app.py
 ```
@@ -64,7 +64,7 @@ Access: http://localhost:8081/cart
 ### 5. Set Up React Frontend
 
 ```sh
-cd C:\Users\user\Desktop\bookstore
+cd C:\Users\user\bookstore\frontend
 npm install
 npm start
 ```
