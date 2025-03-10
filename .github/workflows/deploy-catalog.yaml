@@ -36,6 +36,9 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > kubeconfig.yaml
           export KUBECONFIG=kubeconfig.yaml
 
+      - name: Check IAM roles
+        run: aws eks update-kubeconfig --name bookstore-cluster --region eu-west-2
+
       - name: Deploy new (green) version
         run: |
           kubectl apply -f k8s/services/catalog-service-green.yaml
