@@ -1,75 +1,113 @@
-# Bookstore
+# Bookstore Application Deployment on AWS EKS
 
-An online bookstore application with a React frontend, Spring Boot cart service, Flask catalog service, and PostgreSQL database. Supports browsing, cart management, and checkout with Docker and Kubernetes deployment options.
-
-## Project Structure
-- **`frontend/`**: React frontend (UI).
-- **`backend/cart-service/`**: Spring Boot backend for cart and orders.
-- **`backend/catalog-service/`**: Flask backend for book catalog.
-- **`database/`**: PostgreSQL setup.
-- **`k8s/`**: Kubernetes deployment files.
-- **`ci-cd/`**: CI/CD automation (to be implemented).
-- **`docker-compose.yml`**: Local development with Docker Compose.
+This guide provides step-by-step instructions to deploy the Bookstore application on AWS Elastic Kubernetes Service (EKS). It covers building and pushing Docker images, setting up EKS, and deploying Kubernetes manifests.
 
 ## Prerequisites
-Ensure you have the following installed with these versions:
+Before proceeding, ensure you have the following installed:
+- AWS CLI
+- kubectl
+- eksctl
+- Docker
+- Kubernetes
+- Terraform (if managing infrastructure as code)
 
-| Software          | Version       | Download Link                                  |
-|-------------------|---------------|------------------------------------------------|
-| Node.js           | 18.17.0       | [nodejs.org](https://nodejs.org/dist/v18.17.0/) |
-| Java JDK          | 11            | [adoptium.net](https://adoptium.net/temurin/releases/?version=11) |
-| Maven             | 3.9.6         | [maven.apache.org](https://maven.apache.org/download.cgi) |
-| Python            | 3.11.5        | [python.org](https://www.python.org/downloads/release/python-3115/) |
-| PostgreSQL        | 15.4          | [postgresql.org](https://www.postgresql.org/download/) |
-| Git               | 2.43.0        | [git-scm.com](https://git-scm.com/downloads) |
-
-- **Operating System**: Tested on Windows 10/11 (should work on macOS/Linux with minor adjustments).
-
-## Setup Instructions
-
-### 1. Clone the Repository
-`git clone https://github.com/codemissile/bookstore.git
-cd bookstore`
-
-### 2. Set Up PostgreSQL
-user:postgres
-password:postgres
-
-open psql cmd:
-
-CREATE DATABASE bookstore;
-```\c bookstore```
-
-Database Initialization:
-The cart-service uses schema.sql and data.sql to initialize the database on startup.
-
-### 3. Set Up Flask Catalog Service
-
-**Catalog Service**
+## Step 1: Authenticate AWS CLI
 ```sh
-cd backend/catalog-service
-pip install flask flask-cors psycopg2-binary
-python app.py
+aws configure
 ```
-Access: http://localhost:5000/catalog
+Set up your AWS credentials with your access key and secret key.
 
-### 4. Set Up Spring Boot Cart Service
-
-**Cart Service**
-   ```sh
-   cd backend/cart-service
-   mvn clean install
-   mvn spring-boot:run
-   ```
-
-Access: http://localhost:8081/cart
-
-### 5. Set Up React Frontend
-
+## Step 2: Create an EKS Cluster
 ```sh
-cd C:\Users\user\bookstore\frontend
-npm install
-npm start
+eksctl create cluster --name bookstore-cluster --region <your-region> --nodegroup-name standard-workers --node-type t3.small --nodes 2 --nodes-min 2 --nodes-max 4
+```
+This command creates an EKS cluster with a node group of `t3.small` instances.
+
+## Step 3: Authenticate with EKS Cluster
+```sh
+aws eks --region <your-region> update-kubeconfig --name bookstore-cluster
+```
+Verify the connection:
+```sh
+kubectl get nodes
 ```
 
-Access: http://localhost:3000
+## Step 4: Create an Amazon ECR Repository
+```sh
+aws ecr create-repository --repository-name bookstore/cart-service
+aws ecr create-repository --repository-name bookstore/catalog-service
+aws ecr create-repository --repository-name bookstore/frontend
+```
+Retrieve login credentials and authenticate Docker:
+```sh
+eval $(aws ecr get-login-password --region <your-region> | docker login --username AWS --password-stdin <aws-account-id>.dkr.ecr.<your-region>.amazonaws.com)
+```
+
+## Step 5: Build and Push Docker Images
+Navigate to each service directory and run:
+```sh
+docker build -t <aws-account-id>.dkr.ecr.<your-region>.amazonaws.com/bookstore/cart-service:latest .
+docker push <aws-account-id>.dkr.ecr.<your-region>.amazonaws.com/bookstore/cart-service:latest
+```
+Repeat for the `catalog-service` and `frontend`:
+```sh
+docker build -t <aws-account-id>.dkr.ecr.<your-region>.amazonaws.com/bookstore/catalog-service:latest .
+docker push <aws-account-id>.dkr.ecr.<your-region>.amazonaws.com/bookstore/catalog-service:latest
+
+docker build -t <aws-account-id>.dkr.ecr.<your-region>.amazonaws.com/bookstore/frontend:latest .
+docker push <aws-account-id>.dkr.ecr.<your-region>.amazonaws.com/bookstore/frontend:latest
+```
+
+## Step 6: Deploy PostgreSQL
+Apply the Kubernetes manifests for PostgreSQL:
+```sh
+kubectl apply -f k8s/postgres/postgres-secret.yaml
+kubectl apply -f k8s/postgres/storageclass.yaml
+kubectl apply -f k8s/postgres/postgres.yaml
+```
+Verify the deployment:
+```sh
+kubectl get pods -n default
+```
+
+## Step 7: Deploy Backend Services
+Deploy the backend services:
+```sh
+kubectl apply -f k8s/services/cart-service.yaml
+kubectl apply -f k8s/services/catalog-service.yaml
+```
+Check that the services are running:
+```sh
+kubectl get pods
+kubectl get svc
+```
+
+## Step 8: Deploy Frontend
+Deploy the frontend service:
+```sh
+kubectl apply -f k8s/services/frontend-deployment.yaml
+kubectl apply -f k8s/services/frontend-service.yaml
+```
+
+## Step 9: Verify Application Deployment
+Get the external load balancer URL:
+```sh
+kubectl get svc frontend-service
+```
+Access the application via the displayed external URL.
+
+## Step 10: Cleanup Resources
+To delete the cluster and free up resources:
+```sh
+eksctl delete cluster --name bookstore-cluster --region <your-region>
+```
+To delete the ECR repositories:
+```sh
+aws ecr delete-repository --repository-name bookstore/cart-service --force
+aws ecr delete-repository --repository-name bookstore/catalog-service --force
+aws ecr delete-repository --repository-name bookstore/frontend --force
+```
+
+## Conclusion
+You have successfully deployed the Bookstore application on AWS EKS. The application is now running in a scalable Kubernetes environment.
+
