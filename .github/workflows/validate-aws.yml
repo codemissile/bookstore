@@ -24,7 +24,7 @@ jobs:
 
       - name: Validate EKS Access
         run: |
-          aws eks describe-cluster --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+          aws eks describe-cluster --name ${{ secrets.EKS_CLUSTER_NAME }}
       
       - name: Validate Kubernetes Access
         run: |
