@@ -35,6 +35,9 @@ jobs:
       - name: Check IAM roles
         run: aws eks update-kubeconfig --name bookstore-cluster --region eu-west-2
 
+      - name: Check Kubernetes Cluster Connection
+        run: kubectl get nodes
+
       - name: Check Kubernetes 
         run: kubectl get svc -A
 
