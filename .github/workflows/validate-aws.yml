@@ -26,9 +26,6 @@ jobs:
         run: |
           aws eks describe-cluster --name ${{ secrets.EKS_CLUSTER_NAME }}
 
-      - name: Check Kubernetes Cluster Connection
-        run: kubectl get nodes
-
       - name: Validate Kubernetes Access
         run: |
           echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > kubeconfig.yaml
