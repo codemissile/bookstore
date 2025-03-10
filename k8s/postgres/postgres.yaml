@@ -48,11 +48,9 @@ spec:
         volumeMounts:
         - mountPath: /var/lib/postgresql/pgdata
           name: postgres-storage
-        - mountPath: /docker-entrypoint-initdb.d
-          name: init-script
+        # - mountPath: /docker-entrypoint-initdb.d
+        #   name: init-script
           
-
-        
         resources:
           requests:
             cpu: "250m"  
