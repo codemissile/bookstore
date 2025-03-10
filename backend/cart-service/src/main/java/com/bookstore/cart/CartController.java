@@ -43,7 +43,7 @@ public class CartController {
             Book book = bookRepository.findById(bookId).orElse(null);
             if (book == null) {
                 ResponseEntity<Book> response = restTemplate.getForEntity(
-                    "http://localhost:5000/inventory/" + bookId, Book.class
+                    "http://catalog-service.default.svc.cluster.local:5000/inventory/" + bookId, Book.class
                 );
                 if (response.getStatusCode().is2xxSuccessful()) {
                     book = response.getBody();
@@ -96,7 +96,7 @@ public class CartController {
                 OrderItem orderItem = new OrderItem(order.getId(), item.getBookId(), item.getQuantity(), item.getPrice());
                 orderItemRepository.save(orderItem);
                 ResponseEntity<String> response = restTemplate.postForEntity(
-                    "http://localhost:5000/inventory/update",
+                    "http://catalog-service.default.svc.cluster.local:5000/inventory/update",
                     new StockUpdateRequest(item.getBookId(), item.getQuantity()),
                     String.class
                 );

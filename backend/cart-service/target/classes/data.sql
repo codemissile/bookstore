@@ -1,7 +1,7 @@
 -- src/main/resources/data.sql
 -- Initial data for books table
 INSERT INTO books (title, author, price, stock_quantity, image_url) VALUES
-    ('Effective Java', 'Joshua Bloch', 45.99, 10, '/images/effective-java.jpg'),
+    ('Effective Java', 'Joshua Bloch', 45.99, 10, '/frontend/public/images/effective-java.jpg'),
     ('Clean Code', 'Robert C. Martin', 39.99, 11, '/images/clean-code.jpg'),
     ('The Pragmatic Programmer', 'Andrew Hunt', 42.50, 12, '/images/pragmatic-programmer.jpg'),
     ('Design Patterns', 'Erich Gamma, Richard Helm, Ralph Johnson, John Vlissides', 54.99, 13, '/images/design-patterns.jpg'),
