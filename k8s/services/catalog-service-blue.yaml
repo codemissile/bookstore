@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-service-blue
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: catalog-service
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: catalog-service
+        version: blue
+    spec:
+      containers:
+      - name: catalog-service
+        image: 160885247530.dkr.ecr.eu-west-2.amazonaws.com/catalog-service:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DB_HOST
+          value: "postgres"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "bookstore"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
