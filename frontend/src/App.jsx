@@ -6,6 +6,10 @@ import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./main.css";
 
+
+const CART_BASE_URL =  "/api/cart";
+const CATALOG_BASE_URL = "/api/catalog";
+
 function Header() {
     return (
         <header className="innerHeader mb-4">
@@ -38,7 +42,7 @@ function Catalog({ sessionId }) {
     const [addedToCart, setAddedToCart] = useState({});
 
     const fetchCatalog = () => {
-        axios.get("http://localhost:5000/catalog")
+        axios.get(`${CATALOG_BASE_URL}`)
             .then((response) => {
                 console.log("Catalog data:", response.data);
                 setBooks(response.data);
@@ -62,7 +66,7 @@ function Catalog({ sessionId }) {
             toast.error("❌ Out of stock!", { position: "top-right", autoClose: 3000 });
             return;
         }
-        axios.post("http://localhost:8081/cart/add", { bookId }, { headers: { "Session-ID": sessionId } })
+        axios.post(`${CART_BASE_URL}/add`, { bookId }, { headers: { "Session-ID": sessionId } })
             .then(() => {
                 setAddedToCart((prev) => ({ ...prev, [bookId]: true }));
                 toast.success("✅ Added to cart!", { position: "top-right", autoClose: 2000 });
@@ -122,7 +126,7 @@ function Cart({ sessionId }) {
 
     const fetchCart = () => {
         if (!sessionId) return;
-        axios.get("http://localhost:8081/cart", { headers: { "Session-ID": sessionId } })
+        axios.get(`${CART_BASE_URL}`, { headers: { "Session-ID": sessionId } })
             .then((response) => {
                 console.log("Cart items:", response.data);
                 setCartItems(response.data);
@@ -145,7 +149,7 @@ function Cart({ sessionId }) {
             toast.error("Session not initialized. Please refresh the page.");
             return;
         }
-        axios.delete(`http://localhost:8081/cart/${id}`, { headers: { "Session-ID": sessionId } })
+        axios.delete(`${CART_BASE_URL}/${id}`, { headers: { "Session-ID": sessionId } })
             .then(() => {
                 console.log("Item removed:", id);
                 fetchCart();
@@ -164,7 +168,7 @@ function Cart({ sessionId }) {
             return;
         }
         setIsProcessing(true);
-        axios.post("http://localhost:8081/cart/order", { customerName: "Anonymous" }, { headers: { "Session-ID": sessionId } })
+        axios.post(`${CART_BASE_URL}/order`, { customerName: "Anonymous" }, { headers: { "Session-ID": sessionId } })
             .then((response) => {
                 console.log("Order response:", response.data);
                 toast.success("✅ Order placed successfully!");
@@ -226,7 +230,7 @@ export default function App() {
 
     useEffect(() => {
         if (!sessionId) {
-            axios.post("http://localhost:8081/cart/session")
+            axios.post(`${CART_BASE_URL}/session`)
                 .then((res) => {
                     const newSessionId = res.data;
                     localStorage.setItem("sessionId", newSessionId);

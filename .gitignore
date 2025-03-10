@@ -1,0 +1,6 @@
+frontend/node_modules/
+frontend/build/
+frontend/package-lock.json
+backend/cart-service/*.log
+backend/cart-service/target/
+backend/cart-service/src/main/resources/application.properties

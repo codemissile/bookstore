@@ -1,14 +1,23 @@
+import os
 from flask import Flask, jsonify, request
 import psycopg2
 from flask_cors import CORS
 import logging
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 CORS(app)
 logging.basicConfig(level=logging.DEBUG)
 
+# Obtener valores de las variables de entorno
+DB_HOST = os.getenv("DB_HOST", "postgres")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME", "bookstore")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+
 def get_db_connection():
-    return psycopg2.connect(dbname="bookstore", user="postgres", password="postgres", host="localhost", port="5432")
+    return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT)
 
 @app.route('/catalog', methods=['GET'])
 def get_catalog():
