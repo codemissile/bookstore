@@ -32,4 +32,12 @@ jobs:
           export KUBECONFIG=kubeconfig.yaml
           kubectl get nodes
 
+      - name: Check IAM roles
+        run: aws eks update-kubeconfig --name bookstore-cluster --region eu-west-2
+
+      - name: Check Kubernetes 
+        run: kubectl get svc -A
+
+
+
 
