@@ -17,3 +17,19 @@ jobs:
       - name: Verify AWS Authentication
         run: |
           aws sts get-caller-identity
+      
+      - name: Validate ECR Access
+        run: |
+          aws ecr describe-repositories --region ${{ secrets.AWS_REGION }}
+
+      - name: Validate EKS Access
+        run: |
+          aws eks describe-cluster --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+      
+      - name: Validate Kubernetes Access
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+          kubectl get nodes
+
+
